@@ -1,3 +1,4 @@
+# Klase priekš vienas virsotnes (stāvokļa) spēles kokā
 class Node:
     def __init__(self, sequence, p1_points, p2_points, player_turn, parent=None, level=0, heuristic_val=None):
         self.sequence = sequence        # list of 0s and 1s
