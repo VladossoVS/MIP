@@ -20,6 +20,6 @@ def get_heuristic(Child_Node: Node, i: int):
     if i != len(Child_Node.sequence) and Child_Node.sequence[i] == Child_Node.sequence[i + 1]:
         right_symbol_penalty = -1
     
-    heur_func_val = pts_delta + left_symbol_penalty + right_symbol_penalty
+    heur_func_val = (2 * pts_delta) + left_symbol_penalty + right_symbol_penalty
 
     return heur_func_val
