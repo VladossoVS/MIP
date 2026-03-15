@@ -20,7 +20,7 @@ def generate_tree(parent_node, max_depth=4):
                 new_human_points += 1
             else: new_ai_points += 1
 
-            child = Node(new_sequence, new_human_points, new_ai_points, 1 - parent_node.player_turn, parent_node, parent_node.level + 1)
+            child = Node(new_sequence, new_human_points, new_ai_points, 1 - parent_node.player_turn, parent_node, parent_node.level + 1, move_index=i)
             parent_node.children.append(child)
             #rekursīvi saģenerē iespējamos gājienus no šī bērna
             generate_tree(child, max_depth)
@@ -35,7 +35,7 @@ def generate_tree(parent_node, max_depth=4):
                 new_human_points -= 1
             else: new_ai_points -= 1
 
-            child = Node(new_sequence, new_human_points, new_ai_points, 1 - parent_node.player_turn, parent_node, parent_node.level + 1)
+            child = Node(new_sequence, new_human_points, new_ai_points, 1 - parent_node.player_turn, parent_node, parent_node.level + 1, move_index=i)
             parent_node.children.append(child)
             generate_tree(child, max_depth)
 
@@ -49,7 +49,7 @@ def generate_tree(parent_node, max_depth=4):
                 new_human_points -= 1
             else: new_ai_points -= 1
 
-            child = Node(new_sequence, new_human_points, new_ai_points, 1 - parent_node.player_turn, parent_node, parent_node.level + 1)
+            child = Node(new_sequence, new_human_points, new_ai_points, 1 - parent_node.player_turn, parent_node, parent_node.level + 1, move_index=i)
             parent_node.children.append(child)
             generate_tree(child, max_depth)
 
@@ -63,6 +63,6 @@ def generate_tree(parent_node, max_depth=4):
                 new_human_points += 1
             else: new_ai_points += 1
 
-            child = Node(new_sequence, new_human_points, new_ai_points, 1 - parent_node.player_turn, parent_node, parent_node.level + 1)
+            child = Node(new_sequence, new_human_points, new_ai_points, 1 - parent_node.player_turn, parent_node, parent_node.level + 1, move_index=i)
             parent_node.children.append(child)
             generate_tree(child, max_depth)

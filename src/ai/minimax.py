@@ -1,8 +1,9 @@
 from math import inf
 from game.generator import generate_tree
+from ai.heuristic import get_heuristic
 
 def evaluate_node(node):
-    return node.ai_points - node.human_points
+    return get_heuristic(node)
 
 def is_terminal(node):
     return len(node.sequence) <= 1 or not node.children
