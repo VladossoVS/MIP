@@ -1,4 +1,4 @@
-from game.node import Node
+from src.game.node import Node
 
 def get_heuristic(child_node: Node):
     parent_node = child_node.parent

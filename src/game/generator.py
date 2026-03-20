@@ -1,4 +1,4 @@
-from game.node import Node
+from src.game.node import Node
 
 # Saģenerē iespējamos gājienus no parent_node
 def generate_tree(parent_node, max_depth=4):

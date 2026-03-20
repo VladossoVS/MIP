@@ -1,6 +1,6 @@
 from math import inf
-from game.generator import generate_tree
-from ai.heuristic import get_heuristic
+from src.game.generator import generate_tree
+from src.ai.heuristic import get_heuristic
 
 def evaluate_node(node):
     return get_heuristic(node)
