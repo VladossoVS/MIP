@@ -1,9 +1,18 @@
 import random
 import tkinter as tk
 from tkinter import messagebox
-from src.game.node import Node
-from src.ai.minimax import find_best_move as find_best_move_minimax
+
 from src.ai.alphabeta import find_best_move as find_best_move_alphabeta
+from src.ai.minimax import find_best_move as find_best_move_minimax
+from src.experiments.metrics import MoveEntry
+from src.experiments.runner import get_next_experiment_index
+from src.experiments.runner import get_file_path
+from src.experiments.runner import start_experiment_file
+from src.experiments.runner import write_move_to_file
+from src.experiments.runner import write_result_to_file
+
+from src.game.node import Node
+
 
 HUMAN = 0
 AI = 1
@@ -18,57 +27,73 @@ CARD = "#2d5ac2"
 BTN = "#4679d6"
 BTN_HOVER = "#598be5"
 
-
-def create_initial_node(length: int, first_turn: int) -> Node:
-    sequence = [random.randint(0, 1) for i in range(length)]
-    return Node(sequence=sequence, human_points=0, ai_points=0, player_turn=first_turn)
-
+def create_start_node(length: int, first_turn: int) -> Node:
+    # Izveidot izvēlēta garuma nejaušu bināro secību
+    sequence = [random.randint(0, 1) for _ in range(length)]
+    return Node(
+        sequence=sequence,
+        human_points=0,
+        ai_points=0,
+        player_turn=first_turn,
+    )
 
 def get_possible_moves(node: Node) -> list[int]:
     return list(range(len(node.sequence) - 1))
 
+def get_move_result(a: int, b: int):
+    if a == 0 and b == 0:
+        return 1, 1
+    if a == 0 and b == 1:
+        return 0, -1
+    if a == 1 and b == 0:
+        return 1, -1
+    return 0, 1
 
 def apply_move(node: Node, index: int) -> Node:
-    if index < 0 or index >= len(node.sequence) - 1:
-        raise ValueError("Invalid move index")
 
-    a, b = node.sequence[index], node.sequence[index + 1]
-    if (a, b) == (0, 0):
-        new_value, delta = 1, 1
-    elif (a, b) == (0, 1):
-        new_value, delta = 0, -1
-    elif (a, b) == (1, 0):
-        new_value, delta = 1, -1
-    else:
-        new_value, delta = 0, 1
+    a = node.sequence[index]
+    b = node.sequence[index + 1]
 
+    new_value, delta = get_move_result(a, b)
     new_sequence = node.sequence[:index] + [new_value] + node.sequence[index + 2:]
-    human_points = node.human_points + (delta if node.player_turn == HUMAN else 0)
-    ai_points = node.ai_points + (delta if node.player_turn == AI else 0)
 
+    human_points = node.human_points
+    ai_points = node.ai_points
+
+    if node.player_turn == HUMAN:
+        human_points += delta
+        next_turn = AI
+    else:
+        ai_points += delta
+        next_turn = HUMAN
+
+    # Atgriež jaunu node, kas atspoguļo jauno spēles stāvokli
     return Node(
         sequence=new_sequence,
         human_points=human_points,
         ai_points=ai_points,
-        player_turn=AI if node.player_turn == HUMAN else HUMAN,
+        player_turn=next_turn,
         parent=node,
         level=node.level + 1,
         move_index=index,
     )
 
-
-def is_terminal(node: Node) -> bool:
+def is_game_over(node: Node) -> bool:
+    # Spēle beidzas, kad paliek tikai viens elements
     return len(node.sequence) == 1
 
-
 def get_status_text(node: Node) -> str:
-    if is_terminal(node):
+    if is_game_over(node):
         if node.human_points > node.ai_points:
             return "Human wins!"
         if node.ai_points > node.human_points:
             return "AI wins!"
         return "Draw!"
-    return "Your turn" if node.player_turn == HUMAN else "AI is thinking..."
+
+    if node.player_turn == HUMAN:
+        return "Your turn"
+
+    return "AI is thinking..."
 
 def get_max_depth(seq_len: int):
     n = seq_len - 1
@@ -85,21 +110,24 @@ def get_max_depth(seq_len: int):
     
     return max(depth, MAX_DEPTH)
 
-
-def ai_choose_move(node: Node, algorithm: str):
-    moves = get_possible_moves(node)
-    if not moves:
+def ai_move(node: Node, algorithm: str):
+    possible_moves = get_possible_moves(node)
+    if not possible_moves:
         return None
 
-    finder = find_best_move_minimax if algorithm == "Minimax" else find_best_move_alphabeta
+    if algorithm == "Minimax":
+        finder = find_best_move_minimax
+    else:
+        finder = find_best_move_alphabeta
 
-    depth = get_max_depth(len(moves))
+    depth = get_max_depth(len(node.sequence))
     choice_node, _ = finder(node, max_depth=node.level + depth)
 
+    # Ja algoritms nespēj atgriezt gājienu, izmanto nejaušu rezerves risinājumu
     if choice_node is None or choice_node.move_index is None:
-        return random.choice(moves)
+        return random.choice(possible_moves)
+    
     return choice_node.move_index
-
 
 class GameUI:
     def __init__(self, root: tk.Tk):
@@ -110,6 +138,11 @@ class GameUI:
         self.root.configure(bg=BG)
 
         self.current_node: Node | None = None
+
+        # Logger eksperimentu saglabāšanai txt failos
+        self.experiment_file_path = None
+        self.move_number = 0
+
         self.start_length = 15
         self.first_turn = HUMAN
         self.algorithm = "Alpha-Beta"
@@ -120,12 +153,15 @@ class GameUI:
         self.show_menu()
 
     def clear_screen(self):
+        # Paslēpt abus ekrānus
         self.menu_frame.pack_forget()
         self.game_frame.pack_forget()
-        for widget in self.menu_frame.winfo_children():
-            widget.destroy()
-        for widget in self.game_frame.winfo_children():
-            widget.destroy()
+
+        # Remove vecos elementus
+        for element in self.menu_frame.winfo_children():
+            element.destroy()
+        for element in self.game_frame.winfo_children():
+            element.destroy()
 
     def create_button(self, parent, text, command, width=14, pady=8):
         return tk.Button(
@@ -144,10 +180,6 @@ class GameUI:
             cursor="hand2",
         )
 
-    def create_label(self, parent, text, size=12, bold=False, fg=FG):
-        font = ("Segoe UI", size, "bold" if bold else "normal")
-        return tk.Label(parent, text=text, bg=BG, fg=fg, font=font)
-
     def show_menu(self):
         self.clear_screen()
         self.menu_frame.pack(fill="both", expand=True)
@@ -155,8 +187,13 @@ class GameUI:
         center = tk.Frame(self.menu_frame, bg=BG)
         center.place(relx=0.5, rely=0.43, anchor="center")
 
-        self.create_label(center, "Number of cells", size=13).pack(pady=(0, 8))
-
+        tk.Label(
+            center,
+            text="Number of cells",
+            bg=BG,
+            fg=FG,
+            font=("Segoe UI", 13, "normal"),
+        ).pack(pady=(0, 8))
         slider_row = tk.Frame(center, bg=BG)
         slider_row.pack(pady=(0, 18))
 
@@ -186,6 +223,7 @@ class GameUI:
             width=3,
         ).pack(side="left", padx=(10, 0))
 
+        # Pārbaude, kurš sāk 1
         self.first_turn_var = tk.BooleanVar(value=True)
         tk.Checkbutton(
             center,
@@ -201,14 +239,19 @@ class GameUI:
             font=("Segoe UI", 12),
         ).pack(pady=(0, 18))
 
-        self.create_label(center, "Search Algorithm", size=13).pack(pady=(0, 8))
-
+        tk.Label(
+            center,
+            text="Search Algorithm",
+            bg=BG,
+            fg=FG,
+            font=("Segoe UI", 13, "normal"),
+        ).pack(pady=(0, 8))
         self.algorithm_var = tk.StringVar(value="Alpha-Beta")
-        algo_row = tk.Frame(center, bg=BG)
-        algo_row.pack(pady=(0, 18))
+        algorithm_row = tk.Frame(center, bg=BG)
+        algorithm_row.pack(pady=(0, 18))
 
         tk.Radiobutton(
-            algo_row,
+            algorithm_row,
             text="Minimax",
             variable=self.algorithm_var,
             value="Minimax",
@@ -222,7 +265,7 @@ class GameUI:
         ).pack(side="left", padx=10)
 
         tk.Radiobutton(
-            algo_row,
+            algorithm_row,
             text="Alpha-Beta",
             variable=self.algorithm_var,
             value="Alpha-Beta",
@@ -240,34 +283,46 @@ class GameUI:
     def show_game(self):
         self.clear_screen()
         self.game_frame.pack(fill="both", expand=True, padx=18, pady=18)
-
         top_row = tk.Frame(self.game_frame, bg=BG)
         top_row.pack(fill="x", pady=(0, 12))
 
         left_buttons = tk.Frame(top_row, bg=BG)
         left_buttons.pack(side="left")
-
         self.create_button(left_buttons, "Menu", self.show_menu, width=10, pady=6).pack(side="left", padx=(0, 8))
         self.create_button(left_buttons, "Restart", self.restart_game, width=10, pady=6).pack(side="left")
 
         score_wrap = tk.Frame(self.game_frame, bg=BG)
         score_wrap.pack(pady=(12, 2))
 
-        self.score_label = self.create_label(score_wrap, "Human: 0    AI: 0", size=16, bold=True)
+        self.score_label = tk.Label(
+            score_wrap,
+            text="Human: 0    AI: 0",
+            bg=BG,
+            fg=FG,
+            font=("Segoe UI", 16, "bold"),
+        )
         self.score_label.pack()
-
-        self.status_label = self.create_label(self.game_frame, "Your turn", size=12, fg=MUTED)
+        self.status_label = tk.Label(
+            self.game_frame,
+            text="Your turn",
+            bg=BG,
+            fg=MUTED,
+            font=("Segoe UI", 12, "normal"),
+        )
         self.status_label.pack(pady=(0, 28))
 
+        # Canvas izmantošana garām secībām
         self.sequence_canvas = tk.Canvas(self.game_frame, bg=BG, height=90, highlightthickness=0)
-        self.sequence_scrollbar = tk.Scrollbar(self.game_frame, orient="horizontal", command=self.sequence_canvas.xview)
+        self.sequence_scrollbar = tk.Scrollbar(
+            self.game_frame,
+            orient="horizontal",
+            command=self.sequence_canvas.xview,
+        )
         self.sequence_canvas.configure(xscrollcommand=self.sequence_scrollbar.set)
 
         self.sequence_inner_frame = tk.Frame(self.sequence_canvas, bg=BG)
         self.sequence_canvas.create_window((0, 0), window=self.sequence_inner_frame, anchor="nw")
-        self.sequence_inner_frame.bind(
-            "<Configure>", lambda e: self.sequence_canvas.configure(scrollregion=self.sequence_canvas.bbox("all"))
-        )
+        self.sequence_inner_frame.bind("<Configure>", self.update_scroll_region)
 
         self.sequence_canvas.pack(fill="x", pady=(0, 4))
         self.sequence_scrollbar.pack(fill="x", pady=(0, 12))
@@ -275,48 +330,69 @@ class GameUI:
         self.moves_frame = tk.Frame(self.game_frame, bg=BG)
         self.moves_frame.pack(pady=(0, 24))
 
-        self.info_label = self.create_label(self.game_frame, f"Algorithm: {self.algorithm}", size=10, fg=MUTED)
+        self.info_label = tk.Label(
+            self.game_frame,
+            text=f"Algorithm: {self.algorithm}",
+            bg=BG,
+            fg=MUTED,
+            font=("Segoe UI", 10, "normal"),
+        )
         self.info_label.pack(side="bottom", pady=(0, 8))
 
         self.render_board()
 
-    def start_game(self):
-        try:
-            length = int(self.length_var.get())
-        except ValueError:
-            messagebox.showerror("Error", "Invalid input.")
-            return
+    def update_scroll_region(self, event):
+        self.sequence_canvas.configure(
+            scrollregion=self.sequence_canvas.bbox("all")
+        )
 
-        if not 15 <= length <= 25:
-            messagebox.showerror("Error", "Length must be between 15 and 25.")
-            return
+    def start_game(self):
+        length = int(self.length_var.get())
 
         self.start_length = length
         self.first_turn = HUMAN if self.first_turn_var.get() else AI
         self.algorithm = self.algorithm_var.get()
 
-        self.current_node = create_initial_node(self.start_length, self.first_turn)
+        # Atrast nākamo brīvo eksperimenta numuru
+        experiment_index = get_next_experiment_index(self.algorithm)
+        if experiment_index is None:
+            messagebox.showinfo("Experiments finished", f"For {self.algorithm} already saved 10 experiments.")
+            return
+
+        self.current_node = create_start_node(self.start_length, self.first_turn)
+
+        self.experiment_file_path = get_file_path(self.algorithm, experiment_index)
+        self.move_number = 0
+
+        start_experiment_file(
+            self.experiment_file_path,
+            self.algorithm,
+            experiment_index,
+            self.start_length,
+            self.first_turn,
+            self.current_node.sequence,
+        )
+
         self.show_game()
 
+        # Ja AI sāk pirmais, tas veic pirmo gājienu automātiski
         if self.current_node.player_turn == AI:
             self.root.after(500, self.do_ai_turn)
 
     def restart_game(self):
-        self.current_node = create_initial_node(self.start_length, self.first_turn)
-        self.render_board()
-        if self.current_node.player_turn == AI:
-            self.root.after(500, self.do_ai_turn)
+        self.start_game()
 
     def render_board(self):
         if self.current_node is None:
             return
 
-        for widget in self.sequence_inner_frame.winfo_children():
-            widget.destroy()
-        for widget in self.moves_frame.winfo_children():
-            widget.destroy()
+        for element in self.sequence_inner_frame.winfo_children():
+            element.destroy()
+        for element in self.moves_frame.winfo_children():
+            element.destroy()
 
-        self.score_label.config(text=f"Human: {self.current_node.human_points}    AI: {self.current_node.ai_points}")
+        # Atjaunināt punktus un statusu
+        self.score_label.config(text=f"Human: {self.current_node.human_points} AI: {self.current_node.ai_points}")
         self.status_label.config(text=get_status_text(self.current_node))
         self.info_label.config(text=f"Algorithm: {self.algorithm}")
 
@@ -334,26 +410,43 @@ class GameUI:
                 pady=10,
             ).pack(side="left", padx=5)
 
-        if is_terminal(self.current_node):
+        if is_game_over(self.current_node):
             return
 
         moves = get_possible_moves(self.current_node)
-        half = (len(moves) + 1) // 2
+        middle = (len(moves) + 1) // 2
 
-        row1 = tk.Frame(self.moves_frame, bg=BG)
-        row2 = tk.Frame(self.moves_frame, bg=BG)
-        row1.pack()
-        row2.pack(pady=(6, 0))
+        first_row = tk.Frame(self.moves_frame, bg=BG)
+        second_row = tk.Frame(self.moves_frame, bg=BG)
+        first_row.pack()
+        second_row.pack(pady=(6, 0))
 
-        state = "normal" if self.current_node.player_turn == HUMAN else "disabled"
-        for idx, move in enumerate(moves):
-            a = self.current_node.sequence[move]
-            b = self.current_node.sequence[move + 1]
+        if self.current_node.player_turn == HUMAN:
+            state = "normal"
+        else:
+            state = "disabled"
 
-            text = f"{a}{b} → {('1' if (a, b) in [(0,0), (1,0)] else '0')} ({'+' if (a,b) in [(0,0),(1,1)] else '-'}1)"
-            btn = tk.Button(
-                row1 if idx < half else row2,
-                text=text,
+        # Izveidojiet vienu pogu katram iespējamajam moves
+        for index, move_index in enumerate(moves):
+            a = self.current_node.sequence[move_index]
+            b = self.current_node.sequence[move_index + 1]
+            new_value, delta = get_move_result(a, b)
+
+            if delta > 0:
+                points_text = f"+{delta}"
+            else:
+                points_text = str(delta)
+
+            button_text = f"{a}{b} -> {new_value} ({points_text})"
+
+            if index < middle:
+                row = first_row
+            if index >= middle:
+                row = second_row
+
+            button = tk.Button(
+                row,
+                text=button_text,
                 state=state,
                 bg=BTN,
                 fg=FG,
@@ -365,36 +458,103 @@ class GameUI:
                 padx=10,
                 pady=8,
                 cursor="hand2" if state == "normal" else "arrow",
-                command=lambda idx=move: self.on_human_move(idx),
+                # Kad tiek nospiesta pogu, veic human gājienu ar šo pāra indeksu
+                command=lambda current_index=move_index: self.on_human_move(current_index),
             )
-            btn.pack(side="left", padx=5, pady=5)
+            button.pack(side="left", padx=5, pady=5)
 
     def on_human_move(self, move_index: int):
-        if self.current_node is None or self.current_node.player_turn != HUMAN:
+        if self.current_node is None:
             return
+        if self.current_node.player_turn != HUMAN:
+            return
+
+        old_node = self.current_node
         self.current_node = apply_move(self.current_node, move_index)
+
+        # Saglabāt human gājienu teksta failā
+        self.log_move(old_node, self.current_node, "Human")
+
         self.render_board()
-        if not is_terminal(self.current_node) and self.current_node.player_turn == AI:
+        self.finish_game()
+
+        # Ja spēle turpinās un tagad ir AI kārta, izsauc AI kārtu
+        if not is_game_over(self.current_node) and self.current_node.player_turn == AI:
             self.root.after(500, self.do_ai_turn)
 
     def do_ai_turn(self):
-        if self.current_node is None or self.current_node.player_turn != AI or is_terminal(self.current_node):
+        if self.current_node is None:
             return
+        if self.current_node.player_turn != AI:
+            return
+        if is_game_over(self.current_node):
+            return
+
         self.status_label.config(text="AI is thinking...")
         self.root.update_idletasks()
 
-        move = ai_choose_move(self.current_node, self.algorithm)
-        if move is None:
+        move_index = ai_move(self.current_node, self.algorithm)
+        if move_index is None:
             return
-        self.current_node = apply_move(self.current_node, move)
-        self.render_board()
 
+        old_node = self.current_node
+        self.current_node = apply_move(self.current_node, move_index)
+
+        # Saglabāt AI gājienu teksta failā
+        self.log_move(old_node, self.current_node, "AI")
+
+        self.render_board()
+        self.finish_game()
+
+    def log_move(self, old_node: Node, new_node: Node, player_name: str):
+        if self.experiment_file_path is None:
+            return
+        move_index = new_node.move_index
+        if move_index is None:
+            return
+
+        a = old_node.sequence[move_index]
+        b = old_node.sequence[move_index + 1]
+        result_value, points_delta = get_move_result(a, b)
+        self.move_number += 1
+
+        entry = MoveEntry(
+            move_number=self.move_number,
+            player=player_name,
+            pair_index=move_index,
+            pair_text=f"{a}{b}",
+            result_value=result_value,
+            points_delta=points_delta,
+            sequence_before=old_node.sequence[:],
+            sequence_after=new_node.sequence[:],
+            human_points=new_node.human_points,
+            ai_points=new_node.ai_points,
+        )
+        write_move_to_file(self.experiment_file_path, entry)
+
+    def finish_game(self):
+        if self.current_node is None:
+            return
+        if self.experiment_file_path is None:
+            return
+        if not is_game_over(self.current_node):
+            return
+
+        winner_text = get_status_text(self.current_node).replace("!", "")
+
+        write_result_to_file(
+        self.experiment_file_path,
+        self.current_node.human_points,
+        self.current_node.ai_points,
+        winner_text,
+        )
+        # Izdzēst logger, lai galīgais rezultāts netiktu ierakstīts divreiz
+        self.experiment_file_path = None
 
 def run_app():
     root = tk.Tk()
     GameUI(root)
     root.mainloop()
-
 
 if __name__ == "__main__":
     run_app()
