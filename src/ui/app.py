@@ -7,6 +7,8 @@ from src.ai.alphabeta import find_best_move as find_best_move_alphabeta
 
 HUMAN = 0
 AI = 1
+MAX_DEPTH = 4
+MAX_NODES = 260000
 
 BG = "#1e3a8a"
 FG = "#f3f3f3"
@@ -68,14 +70,31 @@ def get_status_text(node: Node) -> str:
         return "Draw!"
     return "Your turn" if node.player_turn == HUMAN else "AI is thinking..."
 
+def get_max_depth(seq_len: int):
+    n = seq_len - 1
+    nodes = 1
+    depth = 0
 
-def ai_choose_move(node: Node, algorithm: str, depth: int):
+    while n > 1:
+        nodes *= n
+        if nodes > MAX_NODES:
+            break
+        
+        n -= 1
+        depth += 1
+    
+    return max(depth, MAX_DEPTH)
+
+
+def ai_choose_move(node: Node, algorithm: str):
     moves = get_possible_moves(node)
     if not moves:
         return None
 
     finder = find_best_move_minimax if algorithm == "Minimax" else find_best_move_alphabeta
-    choice_node, _ = finder(node, max_depth=depth)
+
+    depth = get_max_depth(len(moves))
+    choice_node, _ = finder(node, max_depth=node.level + depth)
 
     if choice_node is None or choice_node.move_index is None:
         return random.choice(moves)
@@ -94,7 +113,6 @@ class GameUI:
         self.start_length = 15
         self.first_turn = HUMAN
         self.algorithm = "Alpha-Beta"
-        self.depth = 4
 
         self.menu_frame = tk.Frame(self.root, bg=BG)
         self.game_frame = tk.Frame(self.root, bg=BG)
@@ -365,7 +383,7 @@ class GameUI:
         self.status_label.config(text="AI is thinking...")
         self.root.update_idletasks()
 
-        move = ai_choose_move(self.current_node, self.algorithm, self.depth)
+        move = ai_choose_move(self.current_node, self.algorithm)
         if move is None:
             return
         self.current_node = apply_move(self.current_node, move)
