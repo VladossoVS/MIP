@@ -1,57 +1,47 @@
-from math import inf
+from src.game.node import Node
 from src.game.generator import generate_tree
-from src.ai.heuristic import get_heuristic
 
-def evaluate_node(node):
-    return get_heuristic(node)
+def minimax(_Node: Node):
+    if not _Node.children:
+        if _Node.ai_points > _Node.human_points:
+            _Node.win_condition = 1
+        elif _Node.ai_points < _Node.human_points:
+            _Node.win_condition = -1
+        else:
+            _Node.win_condition = 0
+        return
 
-def is_terminal(node):
-    return len(node.sequence) <= 1 or not node.children
+    eval_func = max if _Node.player_turn else min
 
-def minimax(node, depth, is_maximizing):
-    if depth == 0 or is_terminal(node):
-        return evaluate_node(node)
+    minimax(_Node.children[0])
+    best_val = _Node.children[0].win_condition
 
-    if is_maximizing:
-        best_value = -inf
-        for child in node.children:
-            value = minimax(child, depth - 1, False)
-            best_value = max(best_value, value)
-        return best_value
+    for Child_Node in _Node.children[1:]:
+        minimax(Child_Node)
+        best_val = eval_func(best_val, Child_Node.win_condition)
 
-    best_value = inf
-    for child in node.children:
-        value = minimax(child, depth - 1, True)
-        best_value = min(best_value, value)
-    return best_value
+    _Node.win_condition = best_val
+        
 
-def find_best_move(root, max_depth=4):
+def find_best_move(root: Node, max_depth: int): # -> tuple(Node, int)
+    generate_tree(root, max_depth)
+    minimax(root)
+    
+    best_val = root.win_condition
+
     if not root.children:
-        generate_tree(root, max_depth)
+        return root, best_val
 
-    if not root.children:
-        return None, evaluate_node(root)
+    high_heur = -5
+    best_move = None
 
-    ai_turn = root.player_turn == 1
-    best_child = None
+    for Child_Node in root.children:
+        if Child_Node.win_condition == best_val:
+            if Child_Node.heuristic_val > high_heur:
+                best_move = Child_Node
+                high_heur = Child_Node.heuristic_val 
 
-    if ai_turn:
-        best_value = -inf
-        for child in root.children:
-            value = minimax(child, max_depth - 1, False)
-            child.heuristic_val = value
+            if high_heur == 2:
+                return Child_Node, high_heur
 
-            if value > best_value:
-                best_value = value
-                best_child = child
-    else:
-        best_value = inf
-        for child in root.children:
-            value = minimax(child, max_depth - 1, True)
-            child.heuristic_val = value
-
-            if value < best_value:
-                best_value = value
-                best_child = child
-
-    return best_child, best_value
+    return best_move, best_val

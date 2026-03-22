@@ -1,79 +1,60 @@
-from math import inf
+from src.game.node import Node
 from src.game.generator import generate_tree
-from src.ai.heuristic import get_heuristic
 
-def evaluate_node(node):
-    return get_heuristic(node)
+def alpha_beta(_Node: Node, alpha=-2, beta=2):
+    if not _Node.children:
+        if _Node.ai_points > _Node.human_points:
+            _Node.win_condition = 1
+        elif _Node.ai_points < _Node.human_points:
+            _Node.win_condition = -1
+        else:
+            _Node.win_condition = 0
 
-def is_terminal(node):
-    return len(node.sequence) <= 1 or not node.children
+        return _Node.win_condition
 
-def alpha_beta(node, depth, alpha, beta, is_maximizing):
-    if depth == 0 or is_terminal(node):
-        return evaluate_node(node)
-
-    if is_maximizing:
-        best_value = -inf
-
-        for child in node.children:
-            value = alpha_beta(child, depth - 1, alpha, beta, False)
-            best_value = max(best_value, value)
-            alpha = max(alpha, best_value)
-
+    if _Node.player_turn: # MAX move
+        max_val = -2
+        for Child_Node in _Node.children:
+            val = alpha_beta(Child_Node, alpha, beta)
+            max_val = max(max_val, val)
+            alpha = max(max_val, val)
             if beta <= alpha:
                 break
 
-        return best_value
+        _Node.win_condition = max_val
+        return max_val
+    else: # MIN move
+        min_val = 2
+        for Child_Node in _Node.children:
+            val = alpha_beta(Child_Node, alpha, beta)
+            min_val = min(min_val, val)
+            beta = min(min_val, val)
+            if beta <= alpha:
+                break
 
-    best_value = inf
+        _Node.win_condition = min_val
+        return min_val
 
-    for child in node.children:
-        value = alpha_beta(child, depth - 1, alpha, beta, True)
-        best_value = min(best_value, value)
-        beta = min(beta, best_value)
 
-        if beta <= alpha:
-            break
+def find_best_move(root: Node, max_depth: int): # -> tuple(Node, int)
+    generate_tree(root, max_depth)
+    alpha_beta(root)
+    
+    best_val = root.win_condition
 
-    return best_value
-
-def find_best_move(root, max_depth=4):
     if not root.children:
-        generate_tree(root, max_depth)
+        return root, best_val
 
-    if not root.children:
-        return None, evaluate_node(root)
+    high_heur = -5
+    best_move = None
 
-    best_child = None
-    is_ai_turn = root.player_turn == 1
-    alpha = -inf
-    beta = inf
+    for Child_Node in root.children:
+        if Child_Node.win_condition == best_val:
+            if Child_Node.heuristic_val > high_heur:
+                best_move = Child_Node
+                high_heur = Child_Node.heuristic_val 
 
-    if is_ai_turn:
-        best_value = -inf
+            if high_heur == 2:
+                return Child_Node, high_heur
 
-        for child in root.children:
-            value = alpha_beta(child, max_depth - 1, alpha, beta, False)
-            child.heuristic_val = value
-
-            if value > best_value:
-                best_value = value
-                best_child = child
-
-            alpha = max(alpha, best_value)
-
-        return best_child, best_value
-
-    best_value = inf
-
-    for child in root.children:
-        value = alpha_beta(child, max_depth - 1, alpha, beta, True)
-        child.heuristic_val = value
-
-        if value < best_value:
-            best_value = value
-            best_child = child
-
-        beta = min(beta, best_value)
-
-    return best_child, best_value
+    return best_move, best_val
