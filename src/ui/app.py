@@ -10,9 +10,7 @@ from src.experiments.runner import get_file_path
 from src.experiments.runner import start_experiment_file
 from src.experiments.runner import write_move_to_file
 from src.experiments.runner import write_result_to_file
-
 from src.game.node import Node
-
 
 HUMAN = 0
 AI = 1
@@ -27,7 +25,7 @@ CARD = "#2d5ac2"
 BTN = "#4679d6"
 BTN_HOVER = "#598be5"
 
-def create_start_node(length: int, first_turn: int) -> Node:
+def create_start_node(length, first_turn):
     # Izveidot izvēlēta garuma nejaušu bināro secību
     sequence = [random.randint(0, 1) for _ in range(length)]
     return Node(
@@ -37,10 +35,10 @@ def create_start_node(length: int, first_turn: int) -> Node:
         player_turn=first_turn,
     )
 
-def get_possible_moves(node: Node) -> list[int]:
-    return list(range(len(node.sequence) - 1))
+# def get_possible_moves(node):
+#     return list(range(len(node.sequence) - 1))
 
-def get_move_result(a: int, b: int):
+def get_move_result(a, b):
     if a == 0 and b == 0:
         return 1, 1
     if a == 0 and b == 1:
@@ -49,7 +47,7 @@ def get_move_result(a: int, b: int):
         return 1, -1
     return 0, 1
 
-def apply_move(node: Node, index: int) -> Node:
+def apply_move(node, index):
 
     a = node.sequence[index]
     b = node.sequence[index + 1]
@@ -78,12 +76,12 @@ def apply_move(node: Node, index: int) -> Node:
         move_index=index,
     )
 
-def is_game_over(node: Node) -> bool:
-    # Spēle beidzas, kad paliek tikai viens elements
-    return len(node.sequence) == 1
+# def is_game_over(node):
+#     # Spēle beidzas, kad paliek tikai viens elements
+#     return len(node.sequence) == 1
 
-def get_status_text(node: Node) -> str:
-    if is_game_over(node):
+def get_status_text(node):
+    if len(node.sequence) == 1:
         if node.human_points > node.ai_points:
             return "Human wins!"
         if node.ai_points > node.human_points:
@@ -95,7 +93,7 @@ def get_status_text(node: Node) -> str:
 
     return "AI is thinking..."
 
-def get_max_depth(seq_len: int):
+def get_max_depth(seq_len):
     n = seq_len - 1
     nodes = 1
     depth = 0
@@ -110,8 +108,8 @@ def get_max_depth(seq_len: int):
     
     return max(depth, MAX_DEPTH)
 
-def ai_move(node: Node, algorithm: str):
-    possible_moves = get_possible_moves(node)
+def ai_move(node, algorithm):
+    possible_moves = list(range(len(node.sequence) - 1))
     if not possible_moves:
         return None
 
@@ -130,14 +128,14 @@ def ai_move(node: Node, algorithm: str):
     return choice_node.move_index
 
 class GameUI:
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root):
         self.root = root
         self.root.title("Number Game")
         self.root.geometry("980x620")
         self.root.minsize(860, 560)
         self.root.configure(bg=BG)
 
-        self.current_node: Node | None = None
+        self.current_node = None
 
         # Logger eksperimentu saglabāšanai txt failos
         self.experiment_file_path = None
@@ -162,23 +160,6 @@ class GameUI:
             element.destroy()
         for element in self.game_frame.winfo_children():
             element.destroy()
-
-    def create_button(self, parent, text, command, width=14, pady=8):
-        return tk.Button(
-            parent,
-            text=text,
-            command=command,
-            width=width,
-            bg=BTN,
-            fg=FG,
-            activebackground=BTN_HOVER,
-            activeforeground=FG,
-            relief="flat",
-            bd=0,
-            font=("Segoe UI", 11),
-            pady=pady,
-            cursor="hand2",
-        )
 
     def show_menu(self):
         self.clear_screen()
@@ -278,7 +259,21 @@ class GameUI:
             font=("Segoe UI", 11),
         ).pack(side="left", padx=10)
 
-        self.create_button(center, "Play", self.start_game, width=16).pack(pady=(4, 0))
+        tk.Button(
+            center,
+            text="Play",
+            command=self.start_game,
+            width=16,
+            bg=BTN,
+            fg=FG,
+            activebackground=BTN_HOVER,
+            activeforeground=FG,
+            relief="flat",
+            bd=0,
+            font=("Segoe UI", 11),
+            pady=8,
+            cursor="hand2",
+        ).pack(pady=(4, 0))
 
     def show_game(self):
         self.clear_screen()
@@ -288,8 +283,38 @@ class GameUI:
 
         left_buttons = tk.Frame(top_row, bg=BG)
         left_buttons.pack(side="left")
-        self.create_button(left_buttons, "Menu", self.show_menu, width=10, pady=6).pack(side="left", padx=(0, 8))
-        self.create_button(left_buttons, "Restart", self.restart_game, width=10, pady=6).pack(side="left")
+
+        tk.Button(
+            left_buttons,
+            text="Menu",
+            command=self.show_menu,
+            width=10,
+            bg=BTN,
+            fg=FG,
+            activebackground=BTN_HOVER,
+            activeforeground=FG,
+            relief="flat",
+            bd=0,
+            font=("Segoe UI", 11),
+            pady=6,
+            cursor="hand2",
+        ).pack(side="left", padx=(0, 8))
+
+        tk.Button(
+            left_buttons,
+            text="Restart",
+            command=self.restart_game,
+            width=10,
+            bg=BTN,
+            fg=FG,
+            activebackground=BTN_HOVER,
+            activeforeground=FG,
+            relief="flat",
+            bd=0,
+            font=("Segoe UI", 11),
+            pady=6,
+            cursor="hand2",
+        ).pack(side="left")
 
         score_wrap = tk.Frame(self.game_frame, bg=BG)
         score_wrap.pack(pady=(12, 2))
@@ -355,9 +380,9 @@ class GameUI:
 
         # Atrast nākamo brīvo eksperimenta numuru
         experiment_index = get_next_experiment_index(self.algorithm)
-        if experiment_index is None:
-            messagebox.showinfo("Experiments finished", f"For {self.algorithm} already saved 10 experiments.")
-            return
+        # if experiment_index is None:
+        #     messagebox.showinfo("Experiments finished", f"For {self.algorithm} already saved 10 experiments.")
+        #     return
 
         self.current_node = create_start_node(self.start_length, self.first_turn)
 
@@ -410,10 +435,10 @@ class GameUI:
                 pady=10,
             ).pack(side="left", padx=5)
 
-        if is_game_over(self.current_node):
+        if len(self.current_node.sequence) == 1:
             return
 
-        moves = get_possible_moves(self.current_node)
+        moves = list(range(len(self.current_node.sequence) - 1))
         middle = (len(moves) + 1) // 2
 
         first_row = tk.Frame(self.moves_frame, bg=BG)
@@ -463,7 +488,7 @@ class GameUI:
             )
             button.pack(side="left", padx=5, pady=5)
 
-    def on_human_move(self, move_index: int):
+    def on_human_move(self, move_index):
         if self.current_node is None:
             return
         if self.current_node.player_turn != HUMAN:
@@ -479,7 +504,7 @@ class GameUI:
         self.finish_game()
 
         # Ja spēle turpinās un tagad ir AI kārta, izsauc AI kārtu
-        if not is_game_over(self.current_node) and self.current_node.player_turn == AI:
+        if len(self.current_node.sequence) > 1 and self.current_node.player_turn == AI:
             self.root.after(500, self.do_ai_turn)
 
     def do_ai_turn(self):
@@ -487,7 +512,7 @@ class GameUI:
             return
         if self.current_node.player_turn != AI:
             return
-        if is_game_over(self.current_node):
+        if len(self.current_node.sequence) == 1:
             return
 
         self.status_label.config(text="AI is thinking...")
@@ -506,7 +531,7 @@ class GameUI:
         self.render_board()
         self.finish_game()
 
-    def log_move(self, old_node: Node, new_node: Node, player_name: str):
+    def log_move(self, old_node, new_node, player_name):
         if self.experiment_file_path is None:
             return
         move_index = new_node.move_index
@@ -537,7 +562,7 @@ class GameUI:
             return
         if self.experiment_file_path is None:
             return
-        if not is_game_over(self.current_node):
+        if len(self.current_node.sequence) > 1:
             return
 
         winner_text = get_status_text(self.current_node).replace("!", "")

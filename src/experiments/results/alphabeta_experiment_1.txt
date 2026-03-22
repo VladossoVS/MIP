@@ -1,0 +1,108 @@
+Experiment: 1
+Algorithm: Alpha-Beta
+Length: 15
+First turn: Human
+Initial sequence: 001111001100001
+
+Move 1: Human
+Pair index: 2
+Pair: 11 -> 0 (+1)
+Before: 001111001100001
+After: 00011001100001
+Score: Human 1 | AI 0
+
+Move 2: AI
+Pair index: 0
+Pair: 00 -> 1 (+1)
+Before: 00011001100001
+After: 1011001100001
+Score: Human 1 | AI 1
+
+Move 3: Human
+Pair index: 2
+Pair: 11 -> 0 (+1)
+Before: 1011001100001
+After: 100001100001
+Score: Human 2 | AI 1
+
+Move 4: AI
+Pair index: 2
+Pair: 00 -> 1 (+1)
+Before: 100001100001
+After: 10101100001
+Score: Human 2 | AI 2
+
+Move 5: Human
+Pair index: 7
+Pair: 00 -> 1 (+1)
+Before: 10101100001
+After: 1010110101
+Score: Human 3 | AI 2
+
+Move 6: AI
+Pair index: 4
+Pair: 11 -> 0 (+1)
+Before: 1010110101
+After: 101000101
+Score: Human 3 | AI 3
+
+Move 7: Human
+Pair index: 3
+Pair: 00 -> 1 (+1)
+Before: 101000101
+After: 10110101
+Score: Human 4 | AI 3
+
+Move 8: AI
+Pair index: 2
+Pair: 11 -> 0 (+1)
+Before: 10110101
+After: 1000101
+Score: Human 4 | AI 4
+
+Move 9: Human
+Pair index: 2
+Pair: 00 -> 1 (+1)
+Before: 1000101
+After: 101101
+Score: Human 5 | AI 4
+
+Move 10: AI
+Pair index: 2
+Pair: 11 -> 0 (+1)
+Before: 101101
+After: 10001
+Score: Human 5 | AI 5
+
+Move 11: Human
+Pair index: 1
+Pair: 00 -> 1 (+1)
+Before: 10001
+After: 1101
+Score: Human 6 | AI 5
+
+Move 12: AI
+Pair index: 0
+Pair: 11 -> 0 (+1)
+Before: 1101
+After: 001
+Score: Human 6 | AI 6
+
+Move 13: Human
+Pair index: 0
+Pair: 00 -> 1 (+1)
+Before: 001
+After: 11
+Score: Human 7 | AI 6
+
+Move 14: AI
+Pair index: 0
+Pair: 11 -> 0 (+1)
+Before: 11
+After: 0
+Score: Human 7 | AI 7
+
+Final result
+Human points: 7
+AI points: 7
+Winner: Draw

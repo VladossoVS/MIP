@@ -1,0 +1,129 @@
+Experiment: 4
+Algorithm: Alpha-Beta
+Length: 18
+First turn: AI
+Initial sequence: 101000010011100101
+
+Move 1: AI
+Pair index: 4
+Pair: 00 -> 1 (+1)
+Before: 101000010011100101
+After: 10101010011100101
+Score: Human 0 | AI 1
+
+Move 2: Human
+Pair index: 10
+Pair: 11 -> 0 (+1)
+Before: 10101010011100101
+After: 1010101001000101
+Score: Human 1 | AI 1
+
+Move 3: AI
+Pair index: 10
+Pair: 00 -> 1 (+1)
+Before: 1010101001000101
+After: 101010100110101
+Score: Human 1 | AI 2
+
+Move 4: Human
+Pair index: 9
+Pair: 11 -> 0 (+1)
+Before: 101010100110101
+After: 10101010000101
+Score: Human 2 | AI 2
+
+Move 5: AI
+Pair index: 8
+Pair: 00 -> 1 (+1)
+Before: 10101010000101
+After: 1010101010101
+Score: Human 2 | AI 3
+
+Move 6: Human
+Pair index: 10
+Pair: 10 -> 1 (-1)
+Before: 1010101010101
+After: 101010101011
+Score: Human 1 | AI 3
+
+Move 7: AI
+Pair index: 10
+Pair: 11 -> 0 (+1)
+Before: 101010101011
+After: 10101010100
+Score: Human 1 | AI 4
+
+Move 8: Human
+Pair index: 9
+Pair: 00 -> 1 (+1)
+Before: 10101010100
+After: 1010101011
+Score: Human 2 | AI 4
+
+Move 9: AI
+Pair index: 8
+Pair: 11 -> 0 (+1)
+Before: 1010101011
+After: 101010100
+Score: Human 2 | AI 5
+
+Move 10: Human
+Pair index: 7
+Pair: 00 -> 1 (+1)
+Before: 101010100
+After: 10101011
+Score: Human 3 | AI 5
+
+Move 11: AI
+Pair index: 6
+Pair: 11 -> 0 (+1)
+Before: 10101011
+After: 1010100
+Score: Human 3 | AI 6
+
+Move 12: Human
+Pair index: 5
+Pair: 00 -> 1 (+1)
+Before: 1010100
+After: 101011
+Score: Human 4 | AI 6
+
+Move 13: AI
+Pair index: 4
+Pair: 11 -> 0 (+1)
+Before: 101011
+After: 10100
+Score: Human 4 | AI 7
+
+Move 14: Human
+Pair index: 3
+Pair: 00 -> 1 (+1)
+Before: 10100
+After: 1011
+Score: Human 5 | AI 7
+
+Move 15: AI
+Pair index: 2
+Pair: 11 -> 0 (+1)
+Before: 1011
+After: 100
+Score: Human 5 | AI 8
+
+Move 16: Human
+Pair index: 1
+Pair: 00 -> 1 (+1)
+Before: 100
+After: 11
+Score: Human 6 | AI 8
+
+Move 17: AI
+Pair index: 0
+Pair: 11 -> 0 (+1)
+Before: 11
+After: 0
+Score: Human 6 | AI 9
+
+Final result
+Human points: 6
+AI points: 9
+Winner: AI wins

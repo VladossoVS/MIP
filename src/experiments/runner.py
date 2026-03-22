@@ -3,7 +3,6 @@ from pathlib import Path
 from src.experiments.metrics import MoveEntry
 
 result_folder = Path(__file__).resolve().parent / "results"
-max_experiments = 10
 
 def create_result_folder():
     result_folder.mkdir(parents=True, exist_ok=True)
@@ -17,12 +16,12 @@ def get_next_experiment_index(algorithm: str):
     create_result_folder()
     algorithm_name = get_algorithm_name(algorithm)
 
-    for i in range(1, max_experiments + 1):
+    i = 1
+    while True:
         file_path = result_folder / f"{algorithm_name}_experiment_{i}.txt"
         if not file_path.exists():
             return i
-
-    return None
+        i += 1
 
 def get_file_path(algorithm: str, experiment_index: int):
     algorithm_name = get_algorithm_name(algorithm)
