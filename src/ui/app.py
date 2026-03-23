@@ -35,9 +35,6 @@ def create_start_node(length, first_turn):
         player_turn=first_turn,
     )
 
-# def get_possible_moves(node):
-#     return list(range(len(node.sequence) - 1))
-
 def get_move_result(a, b):
     if a == 0 and b == 0:
         return 1, 1
@@ -75,10 +72,6 @@ def apply_move(node, index):
         level=node.level + 1,
         move_index=index,
     )
-
-# def is_game_over(node):
-#     # Spēle beidzas, kad paliek tikai viens elements
-#     return len(node.sequence) == 1
 
 def get_status_text(node):
     if len(node.sequence) == 1:
@@ -134,7 +127,6 @@ class GameUI:
         self.root.geometry("980x620")
         self.root.minsize(860, 560)
         self.root.configure(bg=BG)
-
         self.current_node = None
 
         # Logger eksperimentu saglabāšanai txt failos
@@ -144,10 +136,8 @@ class GameUI:
         self.start_length = 15
         self.first_turn = HUMAN
         self.algorithm = "Alpha-Beta"
-
         self.menu_frame = tk.Frame(self.root, bg=BG)
         self.game_frame = tk.Frame(self.root, bg=BG)
-
         self.show_menu()
 
     def clear_screen(self):
@@ -164,7 +154,6 @@ class GameUI:
     def show_menu(self):
         self.clear_screen()
         self.menu_frame.pack(fill="both", expand=True)
-
         center = tk.Frame(self.menu_frame, bg=BG)
         center.place(relx=0.5, rely=0.43, anchor="center")
 
@@ -380,12 +369,8 @@ class GameUI:
 
         # Atrast nākamo brīvo eksperimenta numuru
         experiment_index = get_next_experiment_index(self.algorithm)
-        # if experiment_index is None:
-        #     messagebox.showinfo("Experiments finished", f"For {self.algorithm} already saved 10 experiments.")
-        #     return
 
         self.current_node = create_start_node(self.start_length, self.first_turn)
-
         self.experiment_file_path = get_file_path(self.algorithm, experiment_index)
         self.move_number = 0
 
@@ -499,7 +484,6 @@ class GameUI:
 
         # Saglabāt human gājienu teksta failā
         self.log_move(old_node, self.current_node, "Human")
-
         self.render_board()
         self.finish_game()
 
@@ -527,7 +511,6 @@ class GameUI:
 
         # Saglabāt AI gājienu teksta failā
         self.log_move(old_node, self.current_node, "AI")
-
         self.render_board()
         self.finish_game()
 
